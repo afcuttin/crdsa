@@ -48,6 +48,22 @@ while currentRAF < simulationTime
 
     acked_row = row(col_ind)
 
+% now lte's do the successive interference cancellation
+ackedPacketIdx = 1;
+
+while ackedPacketIdx < numel(acked_col)
+    twinCol = randomAccessFrame(acked_row(ackedPacketIdx),acked_col(ackedPacketIdx)) % get twin packet slot id
+    if sum(randomAccessFrame(:,twinCol)>0) ~= 1 % check if twin packet has not collided
+        randomAccessFrame(acked_row(ackedPacketIdx),twinCol) = 0 % cancel twin packet, thus reducing potential interference
+        if sum(randomAccessFrame(:,twinCol)>0) == 1 % check if a new package can be acknowledged, thanks to interference cancellation
+            acked_col(numel(acked_col) + 1) = twinCol
+            acked_row(numel(acked_col) + 1) = find(randomAccessFrame(:,twinCol))
+        end
+    end
+    ackedPacketIdx = ackedPacketIdx + 1
+end    
+
+
     
 
     % pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
