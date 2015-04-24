@@ -40,19 +40,15 @@ while currentRAF < simulationTime
     randomAccessFrame
 
     acked_col=find(sum(randomAccessFrame>0)==1) % find column indexes of packets without collisions
-    % randomAccessFrameLog(randomAccessFrame > 0) = 1
-
+    
     [row_c,col_c,twinSlotId] = find(randomAccessFrame);
-    row=transpose(row_c);
-    col=transpose(col_c)
-
-    [~,col_ind]=ismember(acked_col,col)
+        row=transpose(row_c);
+    col=transpose(col_c);
+    [~,col_ind]=ismember(acked_col,col);
 
     acked_row = row(col_ind)
 
-    % randomAccessFrameCol = sum(randomAccessFrameLog)
-    % success = find(randomAccessFrameCol == 1)
-    % column = randomAccessFrame(:,success(1))
+    
 
     % pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
 
