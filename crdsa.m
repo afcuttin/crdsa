@@ -48,33 +48,11 @@ while currentRAF < simulationTime
 
     acked_row = row(col_ind)
 
-% now let's do the successive interference cancellation
-ackedPacketIdx = 1;
-while ackedPacketIdx < numel(acked_col)
+[sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row);
 
-    twinCol = randomAccessFrame(acked_row(ackedPacketIdx),acked_col(ackedPacketIdx)) % get twin packet slot id
-    randomAccessFrame % only for debug
-    acked_col % only for debug
-    acked_row % only for debug
-
-    if sum(randomAccessFrame(:,twinCol)>0) > 1 % twin packet has collided
-        randomAccessFrame(acked_row(ackedPacketIdx),twinCol) = 0 % cancel twin packet, thus reducing potential interference
-        if sum(randomAccessFrame(:,twinCol)>0) == 1 % check if a new package can be acknowledged, thanks to interference cancellation
-            acked_col(numel(acked_col) + 1) = twinCol
-            acked_row(numel(acked_row) + 1) = find(randomAccessFrame(:,twinCol))
-        end
-    elseif sum(randomAccessFrame(:,twinCol)>0) == 1 % twin packet has not collided, so let's remove its column index from the acked packets arrays
-        twinAckedInd = find(acked_col == twinCol)
-        acked_col(twinAckedInd) = []
-        acked_row(twinAckedInd) = []
-    end
-
-    pause % only for debug
-
-    ackedPacketIdx = ackedPacketIdx + 1
-end    
-
-
+sicRAF
+sicCol
+sicRow
     
 
     % pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
