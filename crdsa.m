@@ -48,6 +48,11 @@ while currentRAF < simulationTime
 
     acked_row = row(col_ind)
 
+[sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row);
+
+sicRAF
+sicCol
+sicRow
     
 
     % pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
