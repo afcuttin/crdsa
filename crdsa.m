@@ -1,13 +1,14 @@
 clear all;
 
-sourceNumber = 10;
-randomAccessFrameLength = 15;
-simulationTime = 1; % total number of RAF
-packetReadyProb = 0.9;
-maxBackoff = 5;
+sourceNumber = 60;
+randomAccessFrameLength = 100;
+simulationTime = 5000; % total number of RAF
+packetReadyProb = 0.05;
+maxBackoff = 100;
+
 ackdPacketCount = 0;
 pcktTransmissionAttempts = 0;
-
+pcktCollisionCount = 0;
 sourceStatus = zeros(1,sourceNumber);
 sourceBackoff = zeros(1,sourceNumber);
 % legit source statuses are always non-negative integers and equal to:
@@ -50,21 +51,22 @@ while currentRAF < simulationTime
 
     [sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row); % do the Successive Interference Cancellation
 
-sicRAF
-sicCol
-sicRow
+% sicRAF
+% sicCol
+% sicRow
 
-    pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1)
-    ackdPacketCount = ackdPacketCount + numel(sicCol)
+    pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
+    ackdPacketCount = ackdPacketCount + numel(sicCol);
 
-    sourcesReady = find(sourceStatus)
-    pause
-    sourcesCollided = setdiff(sourcesReady,sicRow)
-    pause
+    sourcesReady = find(sourceStatus);
+    % pause
+    sourcesCollided = setdiff(sourcesReady,sicRow);
+    % pause
     if numel(sourcesCollided) > 0
+        pcktCollisionCount = pcktCollisionCount + numel(sourcesCollided);
         for collidedSource = 1:numel(sourcesCollided) % loop is needed, because to every collided source a random backoff interval must be assigned
-            sourceStatus(sourcesCollided(collidedSource)) = sourceStatus(sourcesCollided(collidedSource)) + randi(maxBackoff)
-            pause
+            sourceStatus(sourcesCollided(collidedSource)) = sourceStatus(sourcesCollided(collidedSource)) + randi(maxBackoff);
+            % pause
         end
     end
     % if sum(sourceStatus == 1) == 1
@@ -77,7 +79,11 @@ sicRow
     %     sourceStatus  = sourceStatus + sourceBackoff;
     % end
 
-    sourceStatus = sourceStatus - 1 % decrease backoff interval
-    sourceStatus(sourceStatus < 0) = 0 % idle sources stay idle (see permitted statuses above)
+    sourceStatus = sourceStatus - 1; % decrease backoff interval
+    sourceStatus(sourceStatus < 0) = 0; % idle sources stay idle (see permitted statuses above)
     % sourceBackoff = zeros(1,sourceNumber);
 end
+ackdPacketCount
+trafficOffered = pcktTransmissionAttempts / (simulationTime * randomAccessFrameLength)
+throughput = ackdPacketCount / (simulationTime * randomAccessFrameLength)
+pcktCollisionProb = pcktCollisionCount / (simulationTime * randomAccessFrameLength)
