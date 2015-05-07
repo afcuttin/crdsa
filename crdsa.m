@@ -36,8 +36,14 @@ while currentRAF < simulationTime
             randomAccessFrame(eachSource1,firstReplicaSlot) = secondReplicaSlot;
             randomAccessFrame(eachSource1,secondReplicaSlot) = firstReplicaSlot;
         elseif sourceStatus(1,eachSource1) == 1 % backlogged packet
-            % se era backlogged e ha aspettato il turno, allora può generare il pacchetto
-
+            % se era backlogged e ha aspettato il turno, allora può generare un'altra coppia di pacchetti
+            firstReplicaSlot = randi(randomAccessFrameLength);
+            secondReplicaSlot = randi(randomAccessFrameLength);
+            while secondReplicaSlot == firstReplicaSlot
+                secondReplicaSlot = randi(randomAccessFrameLength);
+            end
+            randomAccessFrame(eachSource1,firstReplicaSlot) = secondReplicaSlot;
+            randomAccessFrame(eachSource1,secondReplicaSlot) = firstReplicaSlot;
             % sourceBackoff(1,eachSource1) = randi(maxBackoff,1); % non dovrebbe servire più, perché l'analisi delle collisioni viene fatta dopo
         end
     end
@@ -53,8 +59,8 @@ while currentRAF < simulationTime
         [sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row); % do the Successive Interference Cancellation
     elseif numel(acked_col) == 0
         sicRAF = randomAccessFrame;
-        sicCol = 0;
-        sicRow = 0;
+        sicCol = [];
+        sicRow = [];
     end
 
 % sicRAF
