@@ -49,7 +49,13 @@ while currentRAF < simulationTime
     [~,col_ind]=ismember(acked_col,col);
     acked_row = row(col_ind); % find row indices of packets without collisions
 
-    [sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row); % do the Successive Interference Cancellation
+    if numel(acked_col) > 0
+        [sicRAF,sicCol,sicRow] = sic(randomAccessFrame,acked_col,acked_row); % do the Successive Interference Cancellation
+    elseif numel(acked_col) == 0
+        sicRAF = randomAccessFrame;
+        sicCol = 0;
+        sicRow = 0;
+    end
 
 % sicRAF
 % sicCol
