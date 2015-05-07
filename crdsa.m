@@ -1,10 +1,10 @@
 clear all;
 
-sourceNumber = 60;
-randomAccessFrameLength = 100;
-simulationTime = 5000; % total number of RAF
-packetReadyProb = 0.05;
-maxBackoff = 100;
+sourceNumber = 7;
+randomAccessFrameLength = 12;
+simulationTime = 20; % total number of RAF
+packetReadyProb = 0.7;
+% maxBackoff = 100;
 
 ackdPacketCount = 0;
 pcktTransmissionAttempts = 0;
@@ -15,11 +15,11 @@ sourceBackoff = zeros(1,sourceNumber);
 % 0: source has no packet ready to be transmitted (is idle)
 % 1: source has a packet ready to be transmitted, either because new data must be sent or a previously collided packet has waited the backoff time
 % >1: source is backlogged due to previous packets collision, the value of the status equals the number of slots it must wait for the next transmission attempt
-randomAccessFrame = zeros(sourceNumber,randomAccessFrameLength); % later on referred to as RAF
 % randomAccessFrameLog = zeros(sourceNumber,randomAccessFrameLength);
 
 currentRAF = 0;
 while currentRAF < simulationTime
+    randomAccessFrame = zeros(sourceNumber,randomAccessFrameLength); % later on referred to as RAF
     currentRAF = currentRAF + 1;
 
     for eachSource1 = 1:sourceNumber % create the RAF
@@ -63,24 +63,17 @@ while currentRAF < simulationTime
         sicRow = [];
     end
 
-% sicRAF
-% sicCol
-% sicRow
-
     pcktTransmissionAttempts = pcktTransmissionAttempts + sum(sourceStatus == 1);
     ackdPacketCount = ackdPacketCount + numel(sicCol);
 
     sourcesReady = find(sourceStatus);
-    % pause
     sourcesCollided = setdiff(sourcesReady,sicRow);
-    % pause
     if numel(sourcesCollided) > 0
         pcktCollisionCount = pcktCollisionCount + numel(sourcesCollided);
         % for collidedSource = 1:numel(sourcesCollided) % loop is needed, because to every collided source a random backoff interval must be assigned
             % sourceStatus(sourcesCollided(collidedSource)) = sourceStatus(sourcesCollided(collidedSource)) + randi(maxBackoff);
             sourceStatus(sourcesCollided) = 2;
-            % pause
-        end
+        % end
     end
     % if sum(sourceStatus == 1) == 1
     % if numel(sicCol) > 0
