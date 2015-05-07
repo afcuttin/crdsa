@@ -76,8 +76,9 @@ while currentRAF < simulationTime
     % pause
     if numel(sourcesCollided) > 0
         pcktCollisionCount = pcktCollisionCount + numel(sourcesCollided);
-        for collidedSource = 1:numel(sourcesCollided) % loop is needed, because to every collided source a random backoff interval must be assigned
-            sourceStatus(sourcesCollided(collidedSource)) = sourceStatus(sourcesCollided(collidedSource)) + randi(maxBackoff);
+        % for collidedSource = 1:numel(sourcesCollided) % loop is needed, because to every collided source a random backoff interval must be assigned
+            % sourceStatus(sourcesCollided(collidedSource)) = sourceStatus(sourcesCollided(collidedSource)) + randi(maxBackoff);
+            sourceStatus(sourcesCollided) = 2;
             % pause
         end
     end
@@ -95,7 +96,7 @@ while currentRAF < simulationTime
     sourceStatus(sourceStatus < 0) = 0; % idle sources stay idle (see permitted statuses above)
     % sourceBackoff = zeros(1,sourceNumber);
 end
-ackdPacketCount
-trafficOffered = pcktTransmissionAttempts / (simulationTime * randomAccessFrameLength)
-throughput = ackdPacketCount / (simulationTime * randomAccessFrameLength)
-pcktCollisionProb = pcktCollisionCount / (simulationTime * randomAccessFrameLength)
+ackdPacketCount;
+trafficOffered = pcktTransmissionAttempts / (simulationTime * randomAccessFrameLength);
+throughput = ackdPacketCount / (simulationTime * randomAccessFrameLength);
+pcktCollisionProb = pcktCollisionCount / (simulationTime * randomAccessFrameLength);
