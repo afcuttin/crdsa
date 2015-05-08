@@ -14,7 +14,7 @@ function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccess
 % 		- ackedPcktsRow: an array containing the row indices of acknowledged packets after SIC
 
 nonCollPacketIdx = 1;
-while nonCollPacketIdx < numel(nonCollPcktsCol)
+while nonCollPacketIdx <= numel(nonCollPcktsCol)
     twinPcktCol = inRandomAccessFrame( nonCollPcktsRow(nonCollPacketIdx),nonCollPcktsCol(nonCollPacketIdx) ); % get twin packet slot id
     if sum(inRandomAccessFrame(:,twinPcktCol)>0) > 1 % twin packet has collided
         inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
@@ -22,9 +22,10 @@ while nonCollPacketIdx < numel(nonCollPcktsCol)
             nonCollPcktsCol(numel(nonCollPcktsCol) + 1) = twinPcktCol; % update non collided packets indices arrays
             nonCollPcktsRow(numel(nonCollPcktsRow) + 1) = find(inRandomAccessFrame(:,twinPcktCol));
         end
-    elseif sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1 % twin packet has not collided, indices can be removed from the respective arrays
+    elseif sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1 % twin packet has not collided
+        inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
         nonCollTwinInd = find(nonCollPcktsCol == twinPcktCol);
-        nonCollPcktsCol(nonCollTwinInd) = [];
+        nonCollPcktsCol(nonCollTwinInd) = []; %remove the twin packet from the acked packets list
         nonCollPcktsRow(nonCollTwinInd) = [];
     end
     nonCollPacketIdx = nonCollPacketIdx + 1;
