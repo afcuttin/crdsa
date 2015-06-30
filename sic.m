@@ -13,6 +13,9 @@ function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccess
 % 		- ackedPcktsCol: an array containing the column indices of acknowledged packets after SIC
 % 		- ackedPcktsRow: an array containing the row indices of acknowledged packets after SIC
 
+% TODO: a maximum number of iterations should be available as an input parameter [Issue: https://github.com/afcuttin/crdsa/issues/6]
+% According to Casini et al., 2007, pag.1415 the choice of N-max-iter = 10 appears to achieve most of the CRDSA recursive algorithm potential gain.
+
 nonCollPacketIdx = 1;
 while nonCollPacketIdx <= numel(nonCollPcktsCol)
     twinPcktCol = inRandomAccessFrame( nonCollPcktsRow(nonCollPacketIdx),nonCollPcktsCol(nonCollPacketIdx) ); % get twin packet slot id
