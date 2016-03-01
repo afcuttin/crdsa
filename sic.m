@@ -22,8 +22,8 @@ while nonCollPacketIdx <= numel(nonCollPcktsCol)
     if sum(inRandomAccessFrame(:,twinPcktCol)>0) > 1 % twin packet has collided
         inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
         if sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1; % check if a new package can be acknowledged, thanks to interference cancellation
-            nonCollPcktsCol(numel(nonCollPcktsCol) + 1) = twinPcktCol; % update non collided packets indices arrays
-            nonCollPcktsRow(numel(nonCollPcktsRow) + 1) = find(inRandomAccessFrame(:,twinPcktCol));
+            nonCollPcktsCol = [nonCollPcktsCol,twinPcktCol]; % update non collided packets indices arrays
+            nonCollPcktsRow = [nonCollPcktsRow,find(inRandomAccessFrame(:,twinPcktCol))];
         end
     elseif sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1 % twin packet has not collided
         inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
