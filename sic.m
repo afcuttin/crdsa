@@ -1,38 +1,80 @@
-function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccessFrame,nonCollPcktsCol,nonCollPcktsRow)
-% function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccessFrame,nonCollPcktsCol,nonCollPcktsRow)
+function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(raf,maxIter)
+% function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccessFrame,nonCollPcktsCol,nonCollPcktsRow,capture)
 %
 % perform Successive Interference Cancellation (SIC) on a given Random Access Frame for Contention Resolution Diversity Slotted Aloha
 %
 % +++ Input parameters
-% 		- inRandomAccessFrame: the matrix containing slots and packets informations
-% 		- nonCollPcktsCol: an array containing the column indices of packets that did not encounter collision (can include acked twins)
-% 		- nonCollPcktsRow: an array containing the row indices of packets that did not encounter collision (can include acked twins)
+% 		- raf: the structure of matrices containing slots and packets informations
+% 		- maxIter: the maximum number of times the Successive Interference Cancelation can be performed
 %
 % +++ Output parameters
-% 		- outRandomAccessFrame: the matrix containing slots and packets informations, after SIC
+% 		- outRandomAccessFrame: the structure of matrices containing slots and packets informations, after SIC
 % 		- ackedPcktsCol: an array containing the column indices of acknowledged packets after SIC
 % 		- ackedPcktsRow: an array containing the row indices of acknowledged packets after SIC
 
-% TODO: a maximum number of iterations should be available as an input parameter [Issue: https://github.com/afcuttin/crdsa/issues/6]
-% According to Casini et al., 2007, pag.1415 the choice of N-max-iter = 10 appears to achieve most of the CRDSA recursive algorithm potential gain.
-
-nonCollPacketIdx = 1;
-while nonCollPacketIdx <= numel(nonCollPcktsCol)
-    twinPcktCol = inRandomAccessFrame( nonCollPcktsRow(nonCollPacketIdx),nonCollPcktsCol(nonCollPacketIdx) ); % get twin packet slot id
-    if sum(inRandomAccessFrame(:,twinPcktCol)>0) > 1 % twin packet has collided
-        inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
-        if sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1; % check if a new package can be acknowledged, thanks to interference cancellation
-            nonCollPcktsCol = [nonCollPcktsCol,twinPcktCol]; % update non collided packets indices arrays
-            nonCollPcktsRow = [nonCollPcktsRow,find(inRandomAccessFrame(:,twinPcktCol))];
-        end
-    elseif sum(inRandomAccessFrame(:,twinPcktCol)>0) == 1 % twin packet has not collided
-        inRandomAccessFrame(nonCollPcktsRow(nonCollPacketIdx),twinPcktCol) = 0; % cancel interference
-        nonCollTwinInd = find(nonCollPcktsCol == twinPcktCol);
-        nonCollPcktsCol(nonCollTwinInd) = []; %remove the twin packet from the acked packets list
-        nonCollPcktsRow(nonCollTwinInd) = [];
-    end
-    nonCollPacketIdx = nonCollPacketIdx + 1;
+if ~exist('maxIter','var')
+    % perform complete interference cancelation, maxIter is set equal to the number of active sources
+    maxIter = nnz(sum(raf.status,2));
 end
-outRandomAccessFrame = inRandomAccessFrame;
-ackedPcktsCol = nonCollPcktsCol;
-ackedPcktsRow = nonCollPcktsRow;
+
+iterCounter       = 0;
+ackedPcktsCol     = [];
+ackedPcktsRow     = [];
+raf.slotStatus    = sum(raf.status) == 1;
+newCleanBurstSlot = find(sum(raf.status) == 1);
+
+if numel(newCleanBurstSlot) > 0
+
+    while sum(raf.slotStatus) ~= 0 && iterCounter <= maxIter
+
+        iterCounter = iterCounter + 1;
+        cleanBurstSlot = newCleanBurstSlot;
+        newCleanBurstSlot = [];
+
+        i=1;
+        while i <= numel(cleanBurstSlot)
+            cleanBurstRow = find(raf.status(:,cleanBurstSlot(i)));
+            % update the list of acked bursts
+            ackedPcktsCol = [ackedPcktsCol,cleanBurstSlot(i)];
+            ackedPcktsRow = [ackedPcktsRow,cleanBurstRow];
+            % update statuses
+            raf.status(cleanBurstRow,cleanBurstSlot(i)) = 0;
+            raf.slotStatus(cleanBurstSlot(i))           = 0;
+            % proceed with the interference cancelation
+            twinPcktCol = raf.twins{ cleanBurstRow,cleanBurstSlot(i) };
+
+            for twinPcktIdx = 1:length(twinPcktCol)
+
+                raf.status(cleanBurstRow,twinPcktCol(twinPcktIdx)) = 0; % interference cancelation
+
+                if sum(raf.status(:,twinPcktCol(twinPcktIdx))) == 0 % twin burst was a clean burst
+                    nonCollTwinInd = find(cleanBurstSlot == twinPcktCol(twinPcktIdx));
+                    if ~isempty(nonCollTwinInd)
+                        cleanBurstSlot(nonCollTwinInd) = []; %remove the twin burst from the acked bursts list
+                    end
+                    nonCollTwinInd = find(newCleanBurstSlot == twinPcktCol(twinPcktIdx));
+                    if ~isempty(nonCollTwinInd)
+                        newCleanBurstSlot(nonCollTwinInd) = []; %remove the twin burst from the acked bursts list
+                    end
+                    raf.slotStatus(twinPcktCol(twinPcktIdx))  = 0;
+                elseif sum(raf.status(:,twinPcktCol(twinPcktIdx))) == 1 % a new burst is clean, thanks to interference cancellation
+                    newCleanBurstSlot = [newCleanBurstSlot,twinPcktCol(twinPcktIdx)];
+                    raf.slotStatus(twinPcktCol(twinPcktIdx))  = 1;
+                else % sum(raf.status(:,twinPcktCol(twinPcktIdx))) > 1
+                    % at least two bursts are colliding: do nothing
+                end
+            end
+            i = i + 1;
+        end
+    end
+
+    outRandomAccessFrame = raf.status;
+
+elseif numel(newCleanBurstSlot) == 0
+
+    warning('Nothing to do here, exiting')
+    outRandomAccessFrame = raf.status;
+    ackedPcktsCol = [];
+    ackedPcktsRow = [];
+
+end
