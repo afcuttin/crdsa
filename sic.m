@@ -1,4 +1,4 @@
-function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(raf,maxIter)
+function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(raf,maxIter,capture)
 % function [outRandomAccessFrame,ackedPcktsCol,ackedPcktsRow] = sic(inRandomAccessFrame,nonCollPcktsCol,nonCollPcktsRow,capture)
 %
 % perform Successive Interference Cancellation (SIC) on a given Random Access Frame for Contention Resolution Diversity Slotted Aloha
@@ -17,9 +17,9 @@ if ~exist('maxIter','var')
     maxIter = nnz(sum(raf.status,2));
 end
 
-iterCounter       = 0;
-ackedPcktsCol     = [];
-ackedPcktsRow     = [];
+iterCounter   = 0;
+ackedPcktsCol = [];
+ackedPcktsRow = [];
 
 if nnz(raf.slotStatus) > 0
     newCleanBurstSlot = find(raf.slotStatus);
@@ -32,24 +32,27 @@ if numel(newCleanBurstSlot) > 0
 
     while sum(raf.slotStatus == 1) ~= 0 && iterCounter <= maxIter
 
-        iterCounter = iterCounter + 1;
-        cleanBurstSlot = newCleanBurstSlot;
+        iterCounter       = iterCounter + 1;
+        cleanBurstSlot    = newCleanBurstSlot;
         newCleanBurstSlot = [];
 
         i=1;
         while i <= numel(cleanBurstSlot)
-            cleanBursts = find(raf.status(:,cleanBurstSlot(i)));
-            cleanBurstsLength = numel(cleanBursts);
-            if cleanBurstsLength > 1 % capture scenario
-                cleanBurstRow = cleanBursts(randi(cleanBurstsLength)); % pick one at random (SIR not involved here)
-            elseif cleanBurstsLength == 1 % no capture scenario
-                cleanBurstRow = cleanBursts;
+            burstsInSlot = find(raf.status(:,cleanBurstSlot(i)));
+            burstsInSlotNum = numel(burstsInSlot);
+            if burstsInSlotNum > 1 % capture scenario
+                cleanBurstRow = burstCapture(cleanBurstSlot(i),raf,capture)
+            elseif burstsInSlotNum == 1 % no capture scenario
+                cleanBurstRow = burstsInSlot;
+            else
+                error('Something is wrong here with the SIC');
             end
             % update the list of acked bursts
             ackedPcktsCol = [ackedPcktsCol,cleanBurstSlot(i)];
             ackedPcktsRow = [ackedPcktsRow,cleanBurstRow];
             % update statuses
-            raf.status(cleanBurstRow,cleanBurstSlot(i)) = 0;
+            raf.status(cleanBurstRow,cleanBurstSlot(i))        = 0;
+            raf.receivedPower(cleanBurstRow,cleanBurstSlot(i)) = capture.sicResidual * raf.receivedPower(cleanBurstRow,cleanBurstSlot(i));
 
             if sum(raf.status(:,cleanBurstSlot(i))) == 0 % no capture scenario
                 raf.slotStatus(cleanBurstSlot(i)) = 0;
@@ -60,6 +63,7 @@ if numel(newCleanBurstSlot) > 0
             twinPcktCol = raf.twins{ cleanBurstRow,cleanBurstSlot(i) };
             for twinPcktIdx = 1:length(twinPcktCol)
                 raf.status(cleanBurstRow,twinPcktCol(twinPcktIdx)) = 0; % interference cancelation
+                raf.receivedPower(cleanBurstRow,twinPcktCol(twinPcktIdx)) = capture.sicResidual * raf.receivedPower(cleanBurstRow,twinPcktCol(twinPcktIdx));
                 if sum(raf.status(:,twinPcktCol(twinPcktIdx))) == 0 % twin burst was a clean burst
                     nonCollTwinInd = find(cleanBurstSlot == twinPcktCol(twinPcktIdx));
                     if ~isempty(nonCollTwinInd)
