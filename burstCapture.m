@@ -10,15 +10,15 @@ if numel(collided) == 1
 	capturedSource = collided;
 	fprintf('Warning: there are no collisions!\nNevertheless, I provide you with the right answer without computing the capture ratio.\n')
 elseif numel(collided) > 1
-	captured = find(raf.receivedPower(:,collisionSlotIndex) == max(raf.receivedPower(collided,collisionSlotIndex)))
+	captured = find(raf.receivedPower(:,collisionSlotIndex) == max(raf.receivedPower(collided,collisionSlotIndex)));
 	if ismember(captured,collided) % otherwise a packet that has been canceled can be caputured
 		% TODO: il controllo della riga 14 dovrebbe essere sempre vero, quindi il condizionale va rimosso, insieme alle righe 23 - 26 [Issue: https://github.com/afcuttin/crdsa/issues/11]
-		% captureRatio   = raf.receivedPower(captured,collisionSlotIndex) / sum(raf.receivedPower([1:end ~= captured],collisionSlotIndex));
+		% captureRatio   = raf.receivedPower(captured,collisionSlotIndex) / sum(raf.receivedPower([1:end ~= captured],collisionSlotIndex)); % TODO: remove this line after testing [Issue: https://github.com/afcuttin/crdsa/issues/15]
 		captureRatiodB = 10 * log10(raf.receivedPower(captured,collisionSlotIndex) / sum(raf.receivedPower([1:end ~= captured],collisionSlotIndex)))
 		if captureRatiodB >= capture.threshold
-			capturedSource = captured
+			capturedSource = captured;
 		elseif captureRatiodB < capture.threshold
-			capturedSource = 0
+			capturedSource = 0;
 		end
 	else
 		error('captured burst is not a collided (valid) burst')

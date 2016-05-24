@@ -17,7 +17,7 @@ ackedBursts.slot   = [];
 ackedBursts.source = [];
 
 if capture.type == 'basic'
-    collidedSlots = find(sum(raf.status) > 1);
+    collidedSlots = find(sum(raf.status) > 1)
 elseif capture.type == 'advanced'
     collidedSlots = find(raf.slotStatus == 2);
 else
@@ -25,12 +25,13 @@ else
     collidedSlots = find(sum(raf.status) > 1);
 end
 
-for i = 1:numel(collidedSlots)
-    burstsInSlot = nnz(raf.status(:,collidedSlots(i)));
+for ii = 1:numel(collidedSlots)
+    burstsInSlot = nnz(raf.status(:,collidedSlots(ii)));
+    collidedSlots(ii) % delete me
     if burstsInSlot > 1
         switch capture.criterion
             case 'power'
-                capturedSource = burstCapture(collidedSlots(i),raf,capture)
+                capturedSource = burstCapture(collidedSlots(ii),raf,capture)
             case 'time'
                 % TODO: develop capture by jitter [Issue: https://github.com/afcuttin/crdsa/issues/14]
             case 'frequency'
@@ -42,26 +43,48 @@ for i = 1:numel(collidedSlots)
          end
         if capturedSource > 0
             % update the list of acked bursts
-            ackedBursts.slot   = [ackedBursts.slot,collidedSlots(i)];
-            ackedBursts.source = [ackedBursts.source,capturedSource];
+            ackedBursts.slot   = [ackedBursts.slot,collidedSlots(ii)]
+            ackedBursts.source = [ackedBursts.source,capturedSource]
             % update the raf
-            raf.status(capturedSource,collidedSlots(i))        = 0;
-            raf.receivedPower(capturedSource,collidedSlots(i)) = capture.sicResidual * raf.receivedPower(capturedSource,collidedSlots(i));
+            raf.status % delete me
+            raf.status(capturedSource,collidedSlots(ii))        = 0;
+            raf.status % delete me
+            raf.receivedPower % delete me
+            raf.receivedPower(capturedSource,collidedSlots(ii)) = capture.sicResidual * raf.receivedPower(capturedSource,collidedSlots(ii)); % TODO: il pacchetto catturato che residuo lascia? [Issue: https://github.com/afcuttin/crdsa/issues/16]
+            raf.receivedPower % delete me
             % sir has changed, update the slot status
-            raf.slotStatus(collidedSlots(i)) = 2;
+            raf.slotStatus % delete me
+            raf.slotStatus(collidedSlots(ii)) = 2;
+            raf.slotStatus % delete me
             % cancel the twin(s)
-            twinBurstSlot = raf.twins{ capturedSource,collidedSlots(i) };
+            twinBurstSlot = raf.twins{ capturedSource,collidedSlots(ii) }
             for twinBurstIdx = 1:length(twinBurstSlot)
+            raf.status % delete me
                 raf.status(capturedSource,twinBurstSlot(twinBurstIdx))        = 0;
+            raf.status % delete me
+            raf.receivedPower % delete me
                 raf.receivedPower(capturedSource,twinBurstSlot(twinBurstIdx)) = capture.sicResidual * raf.receivedPower(capturedSource,twinBurstSlot(twinBurstIdx));
-                % sir has changed, update the slot status
+            raf.receivedPower % delete me
+                % sir has changed, update the slot statuss
+            raf.slotStatus % delete me
                 raf.slotStatus(twinBurstSlot(twinBurstIdx)) = 2;
+            raf.slotStatus % delete me
             end
         elseif capturedSource == 0
-            raf.slotStatus(collidedSlots(i)) = 0;
+            raf.slotStatus % delete me
+            raf.slotStatus(collidedSlots(ii)) = 0;
+            raf.slotStatus % delete me
         else
             error('Something is wrong with burstCapture function, its value is %u',capturedSource);
         end
+    elseif burstsInSlot == 1 % a new burst is clean, thanks to interference cancellation
+            raf.slotStatus % delete me
+        raf.slotStatus(collidedSlots(ii)) = 1;
+            raf.slotStatus % delete me
+    elseif burstsInSlot == 0 % no bursts here, thanks to interference cancellation
+            raf.slotStatus % delete me
+        raf.slotStatus(collidedSlots(ii)) = 0;
+            raf.slotStatus % delete me
     else
         error('Something is wrong with the capture: there are %u burst in this slot',burstsInSlot);
     end
