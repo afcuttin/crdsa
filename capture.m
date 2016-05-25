@@ -27,7 +27,6 @@ end
 
 for ii = 1:numel(collidedSlots)
     burstsInSlot = nnz(raf.status(:,collidedSlots(ii)));
-    collidedSlots(ii) % delete me
     if burstsInSlot > 1
         switch capture.criterion
             case 'power'
@@ -46,45 +45,27 @@ for ii = 1:numel(collidedSlots)
             ackedBursts.slot   = [ackedBursts.slot,collidedSlots(ii)]
             ackedBursts.source = [ackedBursts.source,capturedSource]
             % update the raf
-            raf.status % delete me
             raf.status(capturedSource,collidedSlots(ii))        = 0;
-            raf.status % delete me
-            raf.receivedPower % delete me
             raf.receivedPower(capturedSource,collidedSlots(ii)) = capture.sicResidual * raf.receivedPower(capturedSource,collidedSlots(ii)); % TODO: il pacchetto catturato che residuo lascia? [Issue: https://github.com/afcuttin/crdsa/issues/16]
-            raf.receivedPower % delete me
             % sir has changed, update the slot status
-            raf.slotStatus % delete me
             raf.slotStatus(collidedSlots(ii)) = 2;
-            raf.slotStatus % delete me
             % cancel the twin(s)
             twinBurstSlot = raf.twins{ capturedSource,collidedSlots(ii) }
             for twinBurstIdx = 1:length(twinBurstSlot)
-            raf.status % delete me
                 raf.status(capturedSource,twinBurstSlot(twinBurstIdx))        = 0;
-            raf.status % delete me
-            raf.receivedPower % delete me
                 raf.receivedPower(capturedSource,twinBurstSlot(twinBurstIdx)) = capture.sicResidual * raf.receivedPower(capturedSource,twinBurstSlot(twinBurstIdx));
-            raf.receivedPower % delete me
                 % sir has changed, update the slot statuss
-            raf.slotStatus % delete me
                 raf.slotStatus(twinBurstSlot(twinBurstIdx)) = 2;
-            raf.slotStatus % delete me
             end
         elseif capturedSource == 0
-            raf.slotStatus % delete me
             raf.slotStatus(collidedSlots(ii)) = 0;
-            raf.slotStatus % delete me
         else
             error('Something is wrong with burstCapture function, its value is %u',capturedSource);
         end
     elseif burstsInSlot == 1 % a new burst is clean, thanks to interference cancellation
-            raf.slotStatus % delete me
         raf.slotStatus(collidedSlots(ii)) = 1;
-            raf.slotStatus % delete me
     elseif burstsInSlot == 0 % no bursts here, thanks to interference cancellation
-            raf.slotStatus % delete me
         raf.slotStatus(collidedSlots(ii)) = 0;
-            raf.slotStatus % delete me
     else
         error('Something is wrong with the capture: there are %u burst in this slot',burstsInSlot);
     end
