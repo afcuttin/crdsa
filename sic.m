@@ -12,7 +12,7 @@ function [outRandomAccessFrame,ackedBursts] = sic(raf,sicParameters)
 %   - ackedBursts.slot:     an array containing the column (slots) indices of acknowledged bursts after SIC
 %   - ackedBursts.source:   an array containing the row (sources) indices of acknowledged bursts after SIC
 
-if ~exist('sicParameters.maxIter','var')
+if ~isfield(sicParameters,'maxIter')
     % perform complete interference cancelation, maxIter is set equal to the number of active sources
     sicParameters.maxIter = nnz(sum(raf.status,2));
 end
@@ -21,6 +21,8 @@ iterCounter        = 0;
 ackedBursts.slot   = [];
 ackedBursts.source = [];
 newCleanBurstSlot  = find(sum(raf.status) == 1);
+
+% TODO: evaluate if the clean bursts can be captured (that is, correctly received) (put a for cycle that evaluates the burstCapture function for every slot) [Issue: https://github.com/afcuttin/crdsa/issues/24]
 
 if numel(newCleanBurstSlot) > 0
     raf.slotStatus(newCleanBurstSlot) = 1;
@@ -58,6 +60,7 @@ if numel(newCleanBurstSlot) > 0
                     end
                     raf.slotStatus(twinPcktCol(twinPcktIdx)) = 0;
                 elseif sum(raf.status(:,twinPcktCol(twinPcktIdx))) == 1 % a new burst is clean, thanks to interference cancellation
+                    % TODO check if the new clean burst can be captured
                     newCleanBurstSlot                        = [newCleanBurstSlot,twinPcktCol(twinPcktIdx)];
                     raf.slotStatus(twinPcktCol(twinPcktIdx)) = 1;
                 elseif sum(raf.status(:,twinPcktCol(twinPcktIdx))) > 1 % at least two bursts are colliding, but the sir has changed
