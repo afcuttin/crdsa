@@ -1,2 +1,6 @@
 .todos
 *.m~
+*.mat
+
+# added by GitSavvy
+/packetCapture.m
